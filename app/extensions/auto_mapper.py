@@ -10,3 +10,4 @@ def anilist_to_anilistDto(anilistMedia: Anilist_Media) -> AniListDTO:
         print(f"Error mapping Anilist_Media to DTO: {e}")
         # Either raise a custom exception or return a default
         raise ValueError(f"Failed to map media: {str(e)}")
+    

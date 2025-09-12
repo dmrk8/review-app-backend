@@ -1,27 +1,21 @@
-
-
-
-
-
-
-
+from enum import Enum
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime
 
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+    
+class UserData(BaseModel):
+    id : Optional[str] = None
+    username : str = Field(..., min_length=3, max_length=50)
+    hash_password : str = Field(..., min_length=8)
+    created_at : datetime = Field(default_factory=datetime.now)  # Auto-generate timestamps
+    updated_at : datetime = Field(default_factory=datetime.now)  # Auto-generate timestamps
+    role : UserRole = UserRole.USER
 
-class UserReviewRequest(BaseModel):
-    """Response model"""
-    media_id : int
-    title : str
-    type : str
-    review: str
-    rating: float
-
-class UpdateReviewRequest(BaseModel):
-    id : str
-    review: Optional[str] = None
-    rating: Optional[float] = None
-
- 
-
+class UserLogin(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password : str = Field(..., min_length=8)
 

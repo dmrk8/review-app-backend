@@ -1,0 +1,115 @@
+from typing import List, Optional
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+from bson import ObjectId
+from Settings import settings
+from app.models.review_models import ReviewDB
+
+class ReviewsCRUD:
+    def __init__(self, media_type : str):
+        self.client = MongoClient(settings.mongodb_uri, server_api=ServerApi('1'))
+        self.db = self.client[settings.database_name]
+
+        # Pick collection based on media type
+        if media_type.upper() == "ANIME":
+            self.collection = self.db[settings.anime_collection]
+        elif media_type.upper() == "COMIC":
+            self.collection = self.db[settings.manga_collection]
+        else:
+            raise ValueError("Invalid media_type. Must be 'ANIME' or 'COMIC'.")
+        
+        
+    def create_review(self, review_data : ReviewDB) -> str:
+        try:
+            data = review_data.model_dump() #map create dictionary from DATA model
+            data.pop("id", None)
+
+            result =  self.collection.insert_one(data)
+            return result.inserted_id
+        
+        except Exception as e:
+            print("error creating review", e)
+            raise
+
+    def get_reviews_by_user_id(self, user_id : str) -> List[ReviewDB]:
+        try:
+            cursor = self.collection.find({"user_id": user_id})
+            results = [self.map_to_model(doc) for doc in cursor]
+
+            return results
+        except Exception as e:
+            print(f"Error getting reviews for user {user_id}: {e}")
+            raise
+
+    def get_all_reviews(self) -> List[ReviewDB]:
+        try:
+            cursor = self.collection.find()
+
+            results = [self.map_to_model(doc) for doc in cursor] #convert each doc 
+                 
+            return results
+            
+        except Exception:
+            print("error at getting all reviews")
+            raise            
+    
+    def delete_review(self, review_id : str):
+        try: 
+            result = self.collection.delete_one({"_id" : ObjectId(review_id)})
+            return  result
+        
+        except Exception as e:
+            print("error handling deleting review:", e)
+            raise
+
+
+    def update_review(self, updated_data : ReviewDB):
+        try:
+            data_dict = updated_data.model_dump()
+            
+            
+            review_id = data_dict.pop("id", None)
+           
+            if not review_id:
+                raise ValueError("Cannot update review without an id")
+           
+            
+            result = self.collection.update_one(
+                {"_id": ObjectId(review_id)},
+                {"$set": data_dict}
+            )
+
+            return result
+
+        
+        except Exception as e:
+            print(f"Error updating review: {e}")
+            raise
+    
+    def get_by_id(self, review_id : int) -> Optional[ReviewDB]:
+        try:
+            data = self.collection.find_one({"_id": ObjectId(review_id)})
+            
+            if data:
+                return self.map_to_model(data)
+            
+            return None
+                
+        except Exception as e:
+            print(f"Error finding single review by _id {review_id}: {e}")
+            raise
+
+    def map_to_model(self, mongo_doc : dict) -> ReviewDB:
+        mongo_doc["id"] = str(mongo_doc["_id"])
+        mongo_doc.pop("_id", None)
+        return ReviewDB(**mongo_doc) #unpack the dictionary into keyword arguments
+
+
+
+
+
+
+
+    
+
+
