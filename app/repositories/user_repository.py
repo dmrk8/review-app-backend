@@ -21,7 +21,7 @@ class UserRepository:
 
             result = self.collection.insert_one(data)
             
-            return str(result.inserted_id)
+            return result
 
         except Exception as e:
             print(f"Error creating user: {e}")

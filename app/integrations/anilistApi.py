@@ -1,29 +1,17 @@
 from typing import List
-from fastapi import APIRouter, Query
 import httpx
 
 from app.models.anilist_models import Anilist_Media
 
-anilistRouter = APIRouter(prefix="/anilist/search")
-
 ANILIST_URL = "https://graphql.anilist.co"
 
+class AnilistApi:
+    def __init__(self):
+        pass  
 
-@anilistRouter.get("/anime")
-async def search_anime(query: str = Query(min_length=1)):
-    raw_data = await get_anime(query)
-    return map_anilist_to_media(raw_data)
-
-
-@anilistRouter.get("/comic")
-async def search_comic(query : str = Query(min_length=1)):
-    raw_data = await get_comic(query)
-    return map_anilist_to_media(raw_data)
-
-  
-async def get_anime(query: str):
-    graphql_query = {
-        "query": """
+    async def get_anime(self, query: str): 
+        graphql_query = {
+            "query": """
             query($search: String) {
                 Page(perPage: 10) {
                     media(type: ANIME, search: $search) {
@@ -47,22 +35,21 @@ async def get_anime(query: str):
                 }
             }
         """,
-        "variables": {
-            "search" : query  
+            "variables": {
+                "search": query  
+            }
         }
-    }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.post(ANILIST_URL, json=graphql_query)
-        response.raise_for_status()
-        data = response.json()
 
-    return data
+        async with httpx.AsyncClient() as client:
+            response = await client.post(ANILIST_URL, json=graphql_query)
+            response.raise_for_status()
+            data = response.json()
 
- 
-async def get_comic(query: str):
-    graphql_query = {
-        "query": """
+        return map_anilist_to_media(data)
+
+    async def get_comic(self, query: str):  
+        graphql_query = {
+            "query": """
             query($search: String) {
                 Page(perPage: 10) {
                     media(type: MANGA, search: $search) {
@@ -86,20 +73,17 @@ async def get_comic(query: str):
                 }
             }
         """,
-        "variables": {
-            "search" : query  
+            "variables": {
+                "search": query  
+            }
         }
-    }
-    
 
- 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(ANILIST_URL, json=graphql_query)
-        response.raise_for_status()
-        data = response.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(ANILIST_URL, json=graphql_query)
+            response.raise_for_status()
+            data = response.json()
 
-    return data
-
+        return map_anilist_to_media(data)
 
 def map_anilist_to_media(response: dict) -> List[Anilist_Media]:
     media_list = response.get("data", {}).get("Page", {}).get("media", [])

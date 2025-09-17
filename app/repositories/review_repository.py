@@ -25,7 +25,7 @@ class ReviewsCRUD:
             data.pop("id", None)
 
             result =  self.collection.insert_one(data)
-            return result.inserted_id
+            return str(result.inserted_id)
         
         except Exception as e:
             print("error creating review", e)
@@ -59,7 +59,7 @@ class ReviewsCRUD:
             return  result
         
         except Exception as e:
-            print("error handling deleting review:", e)
+            print("error handling deleting review in repo:", e)
             raise
 
 
@@ -67,12 +67,10 @@ class ReviewsCRUD:
         try:
             data_dict = updated_data.model_dump()
             
-            
             review_id = data_dict.pop("id", None)
            
             if not review_id:
                 raise ValueError("Cannot update review without an id")
-           
             
             result = self.collection.update_one(
                 {"_id": ObjectId(review_id)},
@@ -84,8 +82,8 @@ class ReviewsCRUD:
         
         except Exception as e:
             print(f"Error updating review: {e}")
-            raise
-    
+            raise    
+
     def get_by_id(self, review_id : int) -> Optional[ReviewDB]:
         try:
             data = self.collection.find_one({"_id": ObjectId(review_id)})

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from app.models.user_models import UserLogin
 from app.auth.jwt_handler import create_access_token, verify_password
-from app.db_layer.user_repository import UserRepository
+from app.repositories.user_repository import UserRepository
 
 
 

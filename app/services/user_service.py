@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import HTTPException, status
-from app.db_layer.user_repository import UserRepository
+from app.repositories.user_repository import UserRepository
 from app.models.user_models import UserLogin, UserData
 from app.auth.jwt_handler import hash_password
 
@@ -12,7 +12,7 @@ class UserService:
     def create_user(self, user_login : UserLogin) -> str:
         try:
             if self.user_repository.is_username_exists(user_login.username):
-                ValueError("username is already exists")
+                raise ValueError("username is already exists")
 
             hashed_password = hash_password(user_login.password)
 
@@ -29,6 +29,7 @@ class UserService:
             raise
     
     def get_user_by_username(self, username: str) -> UserData:
+
         return self.user_repository.get_by_username(username)
     
     def get_user_by_id(self, id: str) -> UserData:

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.models.review_models import ReviewCreate
+from app.models.review_models import ReviewCreate, ReviewUpdate
 from app.models.user_models import UserData
 from app.services.review_service import ReviewService
 from app.auth.auth_dependencies import get_current_user
@@ -21,18 +21,15 @@ async def create_review(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-    
-
-@review_router.get("/my-reviews")
-async def get_all_reviews(
+@review_router.get("/my-reviews/{media_type}")
+async def get_user_reviews(
     media_type: str,
     current_user: UserData = Depends(get_current_user)
 ):
     
     try:
         review_service = ReviewService(media_type)
-        reviews = review_service.get_all_reviews()
+        reviews = review_service.get_reviews_of_user(current_user)
 
         return [
             {
@@ -51,20 +48,40 @@ async def get_all_reviews(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
    
-
-@review_router.delete("/delete") 
-async def delete_review(
-    review_id: str,
+@review_router.put("/update/{media_type}")
+async def update_review(
     media_type: str,
+    update_request: ReviewUpdate,
     current_user: UserData = Depends(get_current_user)
 ):
-    
+    try:
         review_service = ReviewService(media_type)
-        reviews = review_service.delete_review()
-        pass
 
+        review_service.update_review(update_request, current_user)
 
+        return {"update is a success"} 
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
-@review_router.put("update") 
-async def update_review(media_type: str, update_request: dict):
-    pass
+@review_router.delete("/delete/{media_type}/{review_id}")
+async def delete_review(
+    media_type: str,
+    review_id: str,
+    current_user: UserData = Depends(get_current_user)
+):
+    try:
+        review_service = ReviewService(media_type)
+
+        review_service.delete_review(review_id, current_user)
+
+        return {"message": "delete succesful"}
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=str(e))
+    

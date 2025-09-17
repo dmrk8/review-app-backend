@@ -14,6 +14,7 @@ async def login(user_data: UserLogin):
 @auth_router.get("/me")
 async def get_current_user_info(current_user: UserData = Depends(get_current_user)):
     return {
+        "id": current_user.id,
         "username": current_user.username,
         "role": current_user.role,
         "created_at": current_user.created_at

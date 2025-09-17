@@ -1,17 +1,18 @@
 
-
-
 from typing import List
-from app.models.anilist_dto import AniListDTO
-from app.models.anilist_models import Anilist_Media
-from app.anilist.anilistApi import search_anime, search_comic
+from app.models.anilist_models import Anilist_Media, AniListDTO
+from app.integrations.anilistApi import AnilistApi
 from app.extensions.auto_mapper import anilist_to_anilistDto
 
+import logging
+
+logger = logging.getLogger(__name__)
 class AnilistService:
-    
-    @staticmethod
-    async def search_anime(search : str) -> List[AniListDTO]:
-        animes = await search_anime(search)
+    def __init__(self):
+        self.anilist_api = AnilistApi()
+
+    async def search_anime(self, search : str) -> List[AniListDTO]:
+        animes = await self.anilist_api.get_anime(search)
 
         result_dtos = []
 
@@ -21,14 +22,12 @@ class AnilistService:
                 dto = anilist_to_anilistDto(anime)
                 result_dtos.append(dto)
             except ValueError as e:
-                print(f"Skipping anime due to mapping error: {e}")
-
+                logger.warning(f"skipping anime due to mapping {e}")
         return result_dtos    
 
-    @staticmethod
-    async def search_comic(search : str) -> List[AniListDTO]:
-        comics = await search_comic(search)
-
+    async def search_comic(self, search : str) -> List[AniListDTO]:
+        comics = await self.anilist_api.get_comic(search)
+ 
         result_dtos = []
 
         for comic in comics:
@@ -37,7 +36,7 @@ class AnilistService:
                 dto = anilist_to_anilistDto(comic)
                 result_dtos.append(dto)
             except ValueError as e:
-                print(f"Skipping comic due to mapping error: {e}")
+                logger.warning(f"skipping comic due to mapping {e}")
 
         return result_dtos 
 

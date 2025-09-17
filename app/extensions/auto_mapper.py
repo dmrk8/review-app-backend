@@ -1,5 +1,4 @@
-from app.models.anilist_models import Anilist_Media
-from app.models.anilist_dto import AniListDTO
+from app.models.anilist_models import Anilist_Media, AniListDTO
 
 
 def anilist_to_anilistDto(anilistMedia: Anilist_Media) -> AniListDTO:
