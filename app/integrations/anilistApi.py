@@ -9,7 +9,7 @@ class AnilistApi:
     def __init__(self):
         pass  
 
-    async def get_anime(self, query: str): 
+    async def get_anime(self, query: str) -> List[Anilist_Media]: 
         graphql_query = {
             "query": """
             query($search: String) {
@@ -34,7 +34,7 @@ class AnilistApi:
                     }
                 }
             }
-        """,
+            """,
             "variables": {
                 "search": query  
             }
@@ -47,7 +47,7 @@ class AnilistApi:
 
         return map_anilist_to_media(data)
 
-    async def get_comic(self, query: str):  
+    async def get_comic(self, query: str) -> List[Anilist_Media]:  
         graphql_query = {
             "query": """
             query($search: String) {
@@ -72,9 +72,47 @@ class AnilistApi:
                     }
                 }
             }
-        """,
+            """,
             "variables": {
                 "search": query  
+            }
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(ANILIST_URL, json=graphql_query)
+            response.raise_for_status()
+            data = response.json()
+
+        return map_anilist_to_media(data)
+    
+    async def get_media_list_by_id_list(self, id_in: List[int]) -> List[Anilist_Media]:
+        graphql_query = {
+            "query": """
+            query Page($idIn: [Int]) {
+                Page(perPage: 50) {
+                    media(id_in: $idIn) {
+                        id
+                        title {
+                            english
+                        }
+                        synonyms
+                        coverImage {
+                            large
+                        }
+                        description
+                        startDate {
+                            year
+                        }
+                        type
+                        endDate {
+                             year
+                        }
+                    }
+                }
+            }
+            """,
+            "variables": {
+                "idIn": id_in
             }
         }
 

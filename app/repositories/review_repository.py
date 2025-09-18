@@ -31,7 +31,7 @@ class ReviewsCRUD:
             print("error creating review", e)
             raise
 
-    def get_reviews_by_user_id(self, user_id : str) -> List[ReviewDB]:
+    def get_reviews_by_userid(self, user_id : str) -> List[ReviewDB]:
         try:
             cursor = self.collection.find({"user_id": user_id})
             results = [self.map_to_model(doc) for doc in cursor]

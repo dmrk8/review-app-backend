@@ -16,11 +16,6 @@ class ReviewDB(ReviewCreate):
     created_at : datetime
     updated_at : datetime
 
-
-class ReviewResponse(ReviewCreate):
-    created_at : datetime
-    updated_at : datetime
-
 class ReviewUpdate(BaseModel):
     review_id : str
     review: Optional[str] = None

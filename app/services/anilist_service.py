@@ -39,7 +39,22 @@ class AnilistService:
                 logger.warning(f"skipping comic due to mapping {e}")
 
         return result_dtos 
+    
+    async def get_user_media_list(self, id_in: List[int]) -> List[AniListDTO]:
+        media_list = await self.anilist_api.get_media_list_by_id_list(id_in)
+    
+        result_dtos = []
 
+        for media in media_list:
+            try:
+                AnilistService.set_english_title_if_missing(media)
+                dto = anilist_to_anilistDto(media)
+                result_dtos.append(dto)
+            except ValueError as e:
+                logger.warning(f"skipping media due to mapping {e}")
+
+        return result_dtos
+    
     @staticmethod 
     def set_english_title_if_missing(media: Anilist_Media) -> None:
         """Set the English title from synonyms if it's missing"""

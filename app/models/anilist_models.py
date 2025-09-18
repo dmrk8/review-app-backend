@@ -13,6 +13,7 @@ class Anilist_Media(BaseModel):
     type: str
     
 class AniListDTO(BaseModel):
+    media_id: int
     title_english: str = Field(alias = "title")
     description: Optional[str] = None
     start_year: Optional[int] = None

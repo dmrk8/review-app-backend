@@ -2,6 +2,7 @@ from datetime import datetime
 from app.repositories.review_repository import ReviewsCRUD 
 from app.models.review_models import ReviewCreate, ReviewDB, ReviewUpdate
 from app.models.user_models import UserData
+
 class ReviewService:
     def __init__(self, media_type : str):
         self.repository = ReviewsCRUD(media_type)
@@ -58,6 +59,10 @@ class ReviewService:
         result = self.repository.delete_review(review_id)
         return {"msg:": "review deleted succesfully"} 
         
+    def get_reviews_by_userid(self, user: UserData):
+        review_list = self.repository.get_reviews_by_userid(user.id)
+
+        return review_list
         
 
 
