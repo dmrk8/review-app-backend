@@ -1,15 +1,19 @@
 from typing import List
-import httpx
+import httpx, json
 
 from app.models.anilist_models import Anilist_Media
-
+from app.integrations.redis_client import redis_client
+from app.extensions.cache_utils import cache
 ANILIST_URL = "https://graphql.anilist.co"
-
+CACHE_DURATION = 60 * 5 
 class AnilistApi:
     def __init__(self):
         pass  
+    
+    @cache(ttl=300)
+    async def get_anime(self, query: str) -> List[Anilist_Media]:
 
-    async def get_anime(self, query: str) -> List[Anilist_Media]: 
+        
         graphql_query = {
             "query": """
             query($search: String) {
@@ -45,9 +49,19 @@ class AnilistApi:
             response.raise_for_status()
             data = response.json()
 
-        return map_anilist_to_media(data)
+        media_list = map_anilist_to_media(data)
+
+        return media_list
 
     async def get_comic(self, query: str) -> List[Anilist_Media]:  
+        cache_key = f"comic search:{query.lower()}"
+
+        cached = redis_client.get(cache_key)
+
+        if cached:
+            data = json.loads(cached)
+            return [Anilist_Media(**item) for item in data]
+        
         graphql_query = {
             "query": """
             query($search: String) {
@@ -83,7 +97,15 @@ class AnilistApi:
             response.raise_for_status()
             data = response.json()
 
-        return map_anilist_to_media(data)
+        media_list = map_anilist_to_media(data)
+
+        await redis_client.setex(
+            cache_key,
+            CACHE_DURATION,
+            media_list
+        )
+        
+        return media_list
     
     async def get_media_list_by_id_list(self, id_in: List[int]) -> List[Anilist_Media]:
         graphql_query = {
