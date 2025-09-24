@@ -8,6 +8,19 @@ class ReviewService:
         self.repository = ReviewsCRUD(media_type)
 
     def create_review(self, review_request : ReviewCreate, user_data: UserData):
+        existing_review = self.repository.get_review_by_user_and_media(
+            user_id=user_data.id, media_id=review_request.media_id
+        )
+
+        if existing_review:
+            return existing_review
+        
+        if review_request.rating < 0 or review_request > 10:
+            raise ValueError("rating must be between 0 and 10")
+        
+        if len(review_request.review) > 5000:
+            raise ValueError("Review must be less than 5000 characters")
+        
         review_data = ReviewDB( 
             media_id=review_request.media_id,
             title=review_request.title,

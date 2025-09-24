@@ -96,7 +96,16 @@ class ReviewsCRUD:
         except Exception as e:
             print(f"Error finding single review by _id {review_id}: {e}")
             raise
-
+    def get_review_by_user_and_media(self, user_id: str, media_id: str):
+        try:
+            data = self.collection.find_one({"user_id": user_id},
+                                            {"media_id": media_id})
+            if data:
+                return self.map_to_model
+            return None
+        except Exception as e:
+            print(f"Error getting review by user id and media id: {e}")
+            raise
     def map_to_model(self, mongo_doc : dict) -> ReviewDB:
         mongo_doc["id"] = str(mongo_doc["_id"])
         mongo_doc.pop("_id", None)
