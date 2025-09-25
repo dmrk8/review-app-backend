@@ -1,5 +1,4 @@
 from typing import List
-from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
 from app.models.user_models import UserLogin, UserData
 from app.auth.jwt_handler import hash_password
