@@ -6,7 +6,7 @@ from datetime import datetime
 class UserRole(str, Enum):
     ADMIN = "admin"
     USER = "user"
-    
+
 class UserData(BaseModel):
     id : Optional[str] = None
     username : str = Field(..., min_length=3, max_length=50)

@@ -7,12 +7,6 @@ from app.auth.auth_dependencies import get_current_user, require_admin
 user_router = APIRouter(prefix="/user")
 user_service = UserService()
 
-@user_router.post("/register")
-async def register(user_data: UserLogin):
-    user_id = user_service.create_user(user_data)
-    return {"message": "User created successfully", "user_id": user_id}
-
-
 @user_router.get("/all")
 async def get_all_users(current_user: UserData = Depends(require_admin)):
     users =  user_service.get_all_users()
