@@ -2,19 +2,22 @@ from typing import List, Optional
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from bson import ObjectId
-from Settings import settings
 from app.models.review_models import ReviewDB
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env
 
 class ReviewsCRUD:
     def __init__(self, media_type : str):
-        self.client = MongoClient(settings.mongodb_uri, server_api=ServerApi('1'))
-        self.db = self.client[settings.database_name]
+        self.client = MongoClient(os.getenv("MONGODB_URI"), server_api=ServerApi('1'))
+        self.db = self.client[os.getenv("DATABASE_NAME")]
 
         # Pick collection based on media type
         if media_type.upper() == "ANIME":
-            self.collection = self.db[settings.anime_collection]
+            self.collection = self.db[os.getenv("ANIME_COLLECTION")]
         elif media_type.upper() == "COMIC":
-            self.collection = self.db[settings.manga_collection]
+            self.collection = self.db[os.getenv("MANGA_COLLECTION")]
         else:
             raise ValueError("Invalid media_type. Must be 'ANIME' or 'COMIC'.")
         
@@ -117,6 +120,6 @@ class ReviewsCRUD:
 
 
 
-    
+
 
 

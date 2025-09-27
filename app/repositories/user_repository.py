@@ -1,17 +1,18 @@
-
-
 from typing import List
 from bson import ObjectId
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from Settings import settings
 from app.models.user_models import UserData
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env
 
 class UserRepository:
     def __init__(self):
-        self.client = MongoClient(settings.mongodb_uri, server_api=ServerApi("1"))
-        self.db = self.client[settings.database_name]
-        self.collection = self.db[settings.user_collection]
+        self.client = MongoClient(os.getenv("MONGODB_URI"), server_api=ServerApi("1"))
+        self.db = self.client[os.getenv("DATABASE_NAME")]
+        self.collection = self.db[os.getenv("USER_COLLECTION")]
 
     
     def create(self, user : UserData):
