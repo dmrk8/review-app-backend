@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from app.models.review_models import ReviewCreate, ReviewUpdate
 from app.models.user_models import UserData
+from app.services.library_service import LibraryService
 from app.services.review_service import ReviewService
 from app.auth.auth_dependencies import get_current_user
 
@@ -84,4 +85,20 @@ async def delete_review(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
-    
+
+
+ 
+@review_router.get("/library")
+async def get_user_library(
+    current_user: UserData = Depends(get_current_user)
+):
+    try:
+        library_service = LibraryService()
+
+        user_library = await library_service.get_user_library(current_user)
+
+        return user_library
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+ 
