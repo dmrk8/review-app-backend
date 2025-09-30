@@ -9,7 +9,7 @@ class AuthService():
     def __init__(self):
         self.user_repository = UserRepository()
          
-    def authenticate_user(self, user_login: UserLogin) -> dict:
+    def authenticate_user(self, user_login: UserLogin) -> str:
         try:
             user = self.user_repository.get_by_username(user_login.username)
 
@@ -24,15 +24,7 @@ class AuthService():
                 data={"sub": user.username}
             )
 
-            return {
-                "access_token": access_token,
-                "token_type": "bearer",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "role": user.role
-                }
-            }
+            return access_token 
         
         except Exception as e:
             print(f"Error during authentication: {e}")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from app.models.user_models import UserLogin
 from app.services.auth_service import AuthService
 from app.models.user_models import UserData
@@ -9,8 +9,22 @@ auth_router = APIRouter(prefix="/auth", tags=["authentication"])
 auth_service = AuthService()
 
 @auth_router.post("/login")
-async def login(user_data: UserLogin):
-    return auth_service.authenticate_user(user_data)
+async def login(user_data: UserLogin, response: Response):
+    access_token = auth_service.authenticate_user(user_data)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False #DONT FORGET  TO SET TRUE
+    )
+
+    return {"message": "Login successfull"}
+
+@auth_router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Logged out successfully"} 
 
 @auth_router.post("/register")
 async def register(user_data: UserLogin):
