@@ -13,7 +13,7 @@ async def get_current_user(request: Request) -> UserData:
     token = request.cookies.get("access_token")
 
     if not token:
-         HTTPException(
+         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="could not validate credentials",
             headers={"WWW-Authenticate" : "Bearer"}

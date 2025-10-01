@@ -16,8 +16,9 @@ class ReviewsCRUD:
         # Pick collection based on media type
         if media_type.upper() == "ANIME":
             self.collection = self.db[os.getenv("ANIME_COLLECTION")]
-        elif media_type.upper() == "COMIC":
+        elif media_type.upper() == "COMIC" or media_type.upper() == "MANGA":
             self.collection = self.db[os.getenv("MANGA_COLLECTION")]
+            
         else:
             raise ValueError("Invalid media_type. Must be 'ANIME' or 'COMIC'.")
         
