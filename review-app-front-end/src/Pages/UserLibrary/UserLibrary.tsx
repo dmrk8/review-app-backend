@@ -29,7 +29,7 @@ export default function UserLibrary() {
 
   async function handleUpdate(updated: LibraryReviewType) {
     try {
-      const res = await api.put(`review/update/${updated.type}`, {
+      await api.put(`review/update/${updated.type}`, {
         review_id: updated.review_id,
         review: updated.review,
         rating: updated.rating,
@@ -47,7 +47,7 @@ export default function UserLibrary() {
 
   async function handleDelete(deleted: LibraryReviewType) {
     try {
-      const res = await api.delete(
+      await api.delete(
         `review/delete/${deleted.type}/${deleted.review_id}`
       );
 
