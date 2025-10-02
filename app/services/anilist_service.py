@@ -1,4 +1,3 @@
-
 from typing import List
 from app.models.anilist_models import Anilist_Media, AniListDTO
 from app.integrations.anilistApi import AnilistApi
@@ -7,12 +6,13 @@ from app.extensions.auto_mapper import anilist_to_anilistDto
 import logging
 
 logger = logging.getLogger(__name__)
+
 class AnilistService:
     def __init__(self):
         self.anilist_api = AnilistApi()
 
-    async def search_anime(self, search : str) -> List[AniListDTO]:
-        animes = await self.anilist_api.get_anime(search)
+    async def search_anime(self, search: str, page: int = 1, per_page: int = 10) -> dict:  # Updated return type for clarity
+        animes, page_info = await self.anilist_api.get_anime(search, page, per_page)
 
         result_dtos = []
 
@@ -23,11 +23,16 @@ class AnilistService:
                 result_dtos.append(dto)
             except ValueError as e:
                 logger.warning(f"skipping anime due to mapping {e}")
-        return result_dtos    
+        return {
+            "results": result_dtos,
+            "page": page_info.get("currentPage", page),
+            "perPage": per_page,
+            "hasNextPage": page_info.get("hasNextPage", False)
+        }
 
-    async def search_comic(self, search : str) -> List[AniListDTO]:
-        comics = await self.anilist_api.get_comic(search)
- 
+    async def search_comic(self, search: str, page: int = 1, per_page: int = 10) -> dict:  # Updated to match search_anime
+        comics, page_info = await self.anilist_api.get_comic(search, page, per_page)  # Updated call
+
         result_dtos = []
 
         for comic in comics:
@@ -38,11 +43,16 @@ class AnilistService:
             except ValueError as e:
                 logger.warning(f"skipping comic due to mapping {e}")
 
-        return result_dtos 
-    
+        return {  # Updated return to dict with pagination info
+            "results": result_dtos,
+            "page": page_info.get("currentPage", page),
+            "perPage": per_page,
+            "hasNextPage": page_info.get("hasNextPage", False)
+        }
+
     async def get_user_media_list(self, id_in: List[int]) -> List[AniListDTO]:
         media_list = await self.anilist_api.get_media_list_by_id_list(id_in)
-    
+
         result_dtos = []
 
         for media in media_list:
@@ -54,8 +64,8 @@ class AnilistService:
                 logger.warning(f"skipping media due to mapping {e}")
 
         return result_dtos
-    
-    @staticmethod 
+
+    @staticmethod
     def set_english_title_if_missing(media: Anilist_Media) -> None:
         """Set the English title from synonyms if it's missing"""
         if not media.title_english:

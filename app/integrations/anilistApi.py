@@ -3,17 +3,25 @@ import httpx
 
 from app.models.anilist_models import Anilist_Media
 from app.extensions.anilist_cache import anilits_cache
+
 ANILIST_URL = "https://graphql.anilist.co"
+
 class AnilistApi:
     def __init__(self):
         pass  
     
-    @anilits_cache(ttl=300, model=Anilist_Media, is_list=True)
-    async def get_anime(self, query: str) -> List[Anilist_Media]:
+    #@anilits_cache(ttl=300, model=Anilist_Media, is_list=True)
+    async def get_anime(self, query: str,  page: int = 1, per_Page: int = 10) -> List[Anilist_Media]:
         graphql_query = {
             "query": """
-            query($search: String) {
-                Page(perPage: 10) {
+            query($search: String, $perPage: Int, $page: Int) {
+                Page(perPage: $perPage, page: $page) {
+                    pageInfo {
+                        total
+                        currentPage
+                        lastPage
+                        hasNextPage
+                    }
                     media(type: ANIME, search: $search) {
                         id
                         title {
@@ -36,7 +44,9 @@ class AnilistApi:
             }
             """,
             "variables": {
-                "search": query  
+                "search": query,
+                "perPage": per_Page,
+                "page": page  
             }
         }
 
@@ -46,15 +56,22 @@ class AnilistApi:
             data = response.json()
 
         media_list = map_anilist_to_media(data)
+        page_info = data.get("data",{}).get("Page", {}).get("pageInfo", {})
+        
+        return media_list, page_info
 
-        return media_list
-
-    @anilits_cache(ttl=300, model=Anilist_Media, is_list=True)
-    async def get_comic(self, query: str) -> List[Anilist_Media]:   
+    #@anilits_cache(ttl=300, model=Anilist_Media, is_list=True)
+    async def get_comic(self, query: str, page: int = 1, per_Page: int = 10) -> List[Anilist_Media]:   
         graphql_query = {
             "query": """
-            query($search: String) {
-                Page(perPage: 10) {
+            query($search: String, $perPage: Int, $page: Int) {
+                Page(perPage: $perPage, page: $page) {
+                    pageInfo {
+                        total
+                        currentPage
+                        lastPage
+                        hasNextPage
+                    }
                     media(type: MANGA, search: $search) {
                         id
                         title {
@@ -77,7 +94,9 @@ class AnilistApi:
             }
             """,
             "variables": {
-                "search": query  
+                "search": query,
+                "perPage": per_Page,
+                "page": page  
             }
         }
 
@@ -86,7 +105,10 @@ class AnilistApi:
             response.raise_for_status()
             data = response.json()
 
-        return map_anilist_to_media(data)
+        media_list = map_anilist_to_media(data)
+        page_info = data.get("data",{}).get("Page", {}).get("pageInfo", {})
+        
+        return media_list, page_info  # Updated to return tuple like get_anime
 
 
     async def get_media_list_by_id_list(self, id_in: List[int]) -> List[Anilist_Media]:

@@ -25,5 +25,8 @@ class AniListDTO(BaseModel):
         populate_by_name = True
     
 
-   
-   
+class AnilistPagination(BaseModel):
+    results: List[Anilist_Media]
+    page: int
+    per_page: int
+    has_next_page: bool
