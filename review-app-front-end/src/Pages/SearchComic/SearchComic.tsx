@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import CreateReviewButton from '../../components/reviews/CreateReviewButton';
+import { UseInfiniteScroll } from '../../components/useInfiniteScroll';
 
 type Comic = {
   media_id: number;
@@ -12,27 +13,45 @@ type Comic = {
 };
 
 function SearchComic() {
+  const [page, setPage] = useState<number>(1);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(true);
   const [query, setQuery] = useState<string>('');
   const [results, setResults] = useState<Comic[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleSearch = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/media/search/comic?query=${encodeURIComponent(
-          query
-        )}`
-      );
-      const data = await response.json();
-      setResults(data);
-    } catch (error) {
-      console.error(error);
-      setResults([]);
-    }
-    setLoading(false);
-  };
+  const handleSearch = useCallback(
+    async (newPage = 1) => {
+      if (!hasNextPage && newPage !== 1) return; // Stop if no more pages
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `http://127.0.0.1:8000/media/search/comic?query=${encodeURIComponent(
+            query
+          )}&page=${newPage}&per_page=10`
+        );
+        const data = await response.json();
 
+        setResults((prev) =>
+          newPage === 1 ? data.results : [...prev, ...data.results]
+        );
+
+        setPage(data.page + 1);
+        setHasNextPage(data.hasNextPage);
+      } catch (error) {
+        console.error(error);
+        if (page === 1) setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [query, hasNextPage]
+  );
+
+  UseInfiniteScroll({
+    callback: () => handleSearch(page),
+    isLoading: loading,
+    hasNextPage: hasNextPage,
+  })
   return (
     <div>
       <h1>Search Comic</h1>
@@ -42,7 +61,7 @@ function SearchComic() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search for comics.."
       />
-      <button onClick={handleSearch}>Search</button>
+      <button onClick={() => handleSearch(1)}>Search</button>
       {loading && <p>Loading...</p>}
       <ul>
         {results.map((comic) => (

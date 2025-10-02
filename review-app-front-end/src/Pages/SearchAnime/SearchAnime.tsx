@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import CreateReviewButton from '../../components/reviews/CreateReviewButton';
+import { UseInfiniteScroll } from '../../components/useInfiniteScroll';
 
 type Anime = {
   media_id: number;
@@ -12,26 +13,45 @@ type Anime = {
 };
 
 function SearchAnime() {
+  const [page, setPage] = useState<number>(1);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(true);
   const [query, setQuery] = useState<string>('');
   const [results, setResults] = useState<Anime[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleSearch = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `http://127.0.0.1:8000/media/search/anime?query=${encodeURIComponent(
-          query
-        )}`
-      );
-      const data = await response.json();
-      setResults(data);
-    } catch (error) {
-      console.error(error);
-      setResults([]);
-    }
-    setLoading(false);
-  };
+  const handleSearch = useCallback(
+    async (newPage = 1) => {
+      if (!hasNextPage && newPage !== 1) return; // Stop if no more pages
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `http://127.0.0.1:8000/media/search/anime?query=${encodeURIComponent(
+            query
+          )}&page=${newPage}&per_page=10`
+        );
+        const data = await response.json();
+
+        setResults((prev) =>
+          newPage === 1 ? data.results : [...prev, ...data.results]
+        );
+
+        setPage(data.page + 1);
+        setHasNextPage(data.hasNextPage);
+      } catch (error) {
+        console.error(error);
+        if (page === 1) setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [query, hasNextPage]
+  );
+
+  UseInfiniteScroll({
+    callback: () => handleSearch(page),
+    isLoading: loading,
+    hasNextPage: hasNextPage,
+  })
 
   return (
     <div>
@@ -40,14 +60,16 @@ function SearchAnime() {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search for animes..."
+        placeholder="Search for anime..."
       />
-      <button onClick={handleSearch}>Search</button>
-      {loading && <p>loading...</p>}
+      <button onClick={() => handleSearch(1)}>Search</button>
+      {loading && <p>Loading...</p>}
       <ul>
         {results.map((anime) => (
           <li key={anime.media_id}>
-            {anime.cover_image && <img src={anime.cover_image} />}
+            {anime.cover_image && (
+              <img src={anime.cover_image} alt={anime.title} />
+            )}
             <h3>{anime.title}</h3>
             <p>{anime.description}</p>
             <p>{anime.start_year}</p>
@@ -59,7 +81,6 @@ function SearchAnime() {
               mediaType={anime.type}
               mediaId={anime.media_id}
               title={anime.title}
-              
             />
           </li>
         ))}
