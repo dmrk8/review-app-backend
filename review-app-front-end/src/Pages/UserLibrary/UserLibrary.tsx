@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import type { LibraryReviewType } from '../../types/LibraryReviewType';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../components/api/api';
 import { useNavigate } from 'react-router-dom';
+import { UseInfiniteScroll } from '../../components/useInfiniteScroll';
+import type { LibraryReviewType } from '../../types/LibraryReviewType';
 
 export default function UserLibrary() {
   const navigate = useNavigate();
@@ -9,13 +10,37 @@ export default function UserLibrary() {
   const [library, setLibrary] = useState<LibraryReviewType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState<number>(1);
+  const [perPage] = useState<number>(10);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(true);
 
-  useEffect(() => {
-    async function fetchLibrary() {
+  // Sorting and filtering
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<number>(-1); // 1 = ascending, -1 = descending
+  const [filters, setFilters] = useState<Record<string, any>>({});
+
+  const fetchLibrary = useCallback(
+    async (newPage = 1) => {
       try {
-        const res = await api.get('review/library');
-        setLibrary(res.data);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setLoading(true);
+        const res = await api.get('review/library/anime', {
+          params: {
+            page: newPage,
+            per_page: perPage,
+            sort_by: sortBy,
+            sort_order: sortOrder,
+            ...filters,
+          },
+        });
+        const data = res.data;
+
+        setLibrary((prev) =>
+          newPage === 1 ? data.results : [...prev, ...data.results]
+        );
+
+        // Add these to fix infinite scroll
+        setPage(newPage);
+        setHasNextPage(data.hasNextPage);
       } catch (err: any) {
         setError(
           err.response?.data?.detail || err.message || 'Failed to load library'
@@ -23,48 +48,29 @@ export default function UserLibrary() {
       } finally {
         setLoading(false);
       }
-    }
-    fetchLibrary();
-  }, []);
+    },
+    [perPage, sortBy, sortOrder, filters]
+  );
 
-  async function handleUpdate(updated: LibraryReviewType) {
-    try {
-      await api.put(`review/update/${updated.type}`, {
-        review_id: updated.review_id,
-        review: updated.review,
-        rating: updated.rating,
-      });
-      // Update local state to reflect changes
-      setLibrary((prevLibrary) =>
-        prevLibrary.map((item) =>
-          item.review_id === updated.review_id ? { ...item, ...updated } : item
-        )
-      );
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update review');
-    }
-  }
+  useEffect(() => {
+    fetchLibrary(1);
+  }, [fetchLibrary]);
 
-  async function handleDelete(deleted: LibraryReviewType) {
-    try {
-      await api.delete(
-        `review/delete/${deleted.type}/${deleted.review_id}`
-      );
+  UseInfiniteScroll({
+    callback: () => fetchLibrary(page + 1),
+    isLoading: loading,
+    hasNextPage,
+  });
 
-      navigate('/user/library');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete review');
-    }
-  }
-
+  // Add the missing functions
   const handleEdit = (item: LibraryReviewType) => {
     const newReview = window.prompt('Edit Review:', item.review);
-    if (newReview === null) return; // User canceled
+    if (newReview === null) return;
     const newRatingStr = window.prompt(
       'Edit Rating (1-10):',
       item.rating?.toString()
     );
-    if (newRatingStr === null) return; // User canceled
+    if (newRatingStr === null) return;
     const newRating = parseInt(newRatingStr, 10);
     if (isNaN(newRating) || newRating < 1 || newRating > 10) {
       alert('Invalid rating. Please enter a number between 1 and 10.');
@@ -74,12 +80,56 @@ export default function UserLibrary() {
     handleUpdate(updated);
   };
 
-  if (loading) return <div>Loading Library...</div>;
+  const handleUpdate = async (updated: LibraryReviewType) => {
+    try {
+      await api.put(`review/update/${updated.type}`, {
+        review_id: updated.review_id,
+        review: updated.review,
+        rating: updated.rating,
+      });
+      setLibrary((prev) =>
+        prev.map((item) =>
+          item.review_id === updated.review_id ? { ...item, ...updated } : item
+        )
+      );
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to update review');
+    }
+  };
+
+  const handleDelete = async (item: LibraryReviewType) => {
+    try {
+      await api.delete(`review/delete/${item.type}/${item.review_id}`);
+      setLibrary((prev) => prev.filter((i) => i.review_id !== item.review_id));
+      navigate('/user/library');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to delete review');
+    }
+  };
+
+  if (loading && page === 1) return <div>Loading Library...</div>;
   if (error) return <div style={{ color: 'red' }}>{error}</div>;
 
   return (
     <div>
       <h2>Your Library</h2>
+      {/* Sorting & filtering controls */}
+      <div style={{ marginBottom: '1em' }}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="created_at">Sort by Date</option>
+          <option value="rating">Sort by Rating</option>
+          <option value="title">Sort by Title</option>
+        </select>
+        <button onClick={() => setSortOrder(sortOrder * -1)}>
+          {sortOrder === 1 ? 'Asc ↑' : 'Desc ↓'}
+        </button>
+        <input
+          type="text"
+          placeholder="Filter by title"
+          onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
+          style={{ marginLeft: '0.5em' }}
+        />
+      </div>
       {library.length === 0 ? (
         <p>No reviews found.</p>
       ) : (
@@ -116,19 +166,12 @@ export default function UserLibrary() {
               <div>
                 <strong>Updated At:</strong> {item.updated_at}
               </div>
+
               {/* Action buttons */}
               <div style={{ marginTop: '0.5em' }}>
                 <button onClick={() => handleEdit(item)}>Edit</button>
                 <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        'Are you sure you want to delete this review?'
-                      )
-                    ) {
-                      handleDelete(item);
-                    }
-                  }}
+                  onClick={() => handleDelete(item)}
                   style={{ marginLeft: '0.5em', color: 'red' }}
                 >
                   Delete
@@ -138,6 +181,8 @@ export default function UserLibrary() {
           ))}
         </ul>
       )}
+
+      {loading && page > 1 && <p>Loading more...</p>}
     </div>
   );
 }

@@ -8,6 +8,7 @@ interface UseInfiniteScrollProps {
 
 export function UseInfiniteScroll({ callback, isLoading, hasNextPage} : UseInfiniteScrollProps) {
     useEffect(() => {
+      if (isLoading || !hasNextPage) return;
       const handleScroll = () => {
         if (
             window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
