@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from app.models.review_models import ReviewCreate, ReviewUpdate
 from app.models.user_models import UserData
@@ -88,17 +89,29 @@ async def delete_review(
 
 
  
-@review_router.get("/library")
-async def get_user_library(
-    current_user: UserData = Depends(get_current_user)
-):
+@review_router.get("/library/{media_type}")
+async def get_library(
+    media_type: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=50),
+    sort_by: str = Query("created_at"),
+    sort_order: int = Query(1, description="1 for ascending, -1 for descending"),
+    filters: Optional[dict] = None,
+    current_user: UserData = Depends(get_current_user)):
     try:
-        library_service = LibraryService()
 
-        user_library = await library_service.get_user_library(current_user)
+        library_service = LibraryService(media_type)
 
-        return user_library
 
+        return await library_service.get_user_reviews(
+            current_user,
+            page,
+            per_page,
+            filters,
+            sort_by,
+            sort_order
+        )
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
  

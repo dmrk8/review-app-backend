@@ -1,22 +1,26 @@
-from typing import List
+from typing import List, Optional
 from app.services.anilist_service import AnilistService
 from app.repositories.review_repository import ReviewsCRUD
 from app.models.user_models import UserData
 from app.extensions import auto_mapper
 
 class LibraryService:
-    def __init__(self):
+    def __init__(self, collection_name):
         self.anilist_service = AnilistService()
-        self.anime_repo = ReviewsCRUD("ANIME")
-        self.comic_repo = ReviewsCRUD("COMIC")
-        
-    async def get_user_library(self, user: UserData):
-        anime_reviews = self.anime_repo.get_reviews_by_userid(user.id)
-        comic_reviews = self.comic_repo.get_reviews_by_userid(user.id)
+        self.user_repo = ReviewsCRUD(collection_name)
+         
+    async def get_user_reviews(self, user: UserData, 
+                                page: int,
+                                per_page: int,
+                                filters: dict,
+                                sort_by: str,
+                                sort_order: int,
+                                ):
+       
+        #get filtered reviews
+        user_reviews = self.user_repo.get_reviews(user.id, filters, page, per_page, sort_by, sort_order)
 
-        all_reviews = anime_reviews + comic_reviews
-
-        media_ids = [r.media_id for r in all_reviews]
+        media_ids = [r.media_id for r in user_reviews]
 
         media_list = await self.anilist_service.get_user_media_list(media_ids)
 
@@ -24,9 +28,19 @@ class LibraryService:
     
         library_reviews = [
             auto_mapper.map_to_library_review(r, media_map.get(r.media_id))
-            for r in all_reviews
+            for r in user_reviews
         ]
         
-        return library_reviews
+        total = self.user_repo.count_reviews_by_user(user.id, filters)
+         
+        return {
+        "results": library_reviews,
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "has_next_page": page * per_page < total
+    } 
     
     
+    
+                          

@@ -21,8 +21,12 @@ class ReviewsCRUD:
             
         else:
             raise ValueError("Invalid media_type. Must be 'ANIME' or 'COMIC'.")
-        
-        
+
+    def map_to_model(self, mongo_doc : dict) -> ReviewDB:
+        mongo_doc["id"] = str(mongo_doc["_id"])
+        mongo_doc.pop("_id", None)
+        return ReviewDB(**mongo_doc) #unpack the dictionary into keyword arguments
+    
     def create_review(self, review_data : ReviewDB) -> str:
         try:
             data = review_data.model_dump() #map create dictionary from DATA model
@@ -113,12 +117,42 @@ class ReviewsCRUD:
             print(f"Error getting review by user id and media id: {e}")
             raise
 
-    def map_to_model(self, mongo_doc : dict) -> ReviewDB:
-        mongo_doc["id"] = str(mongo_doc["_id"])
-        mongo_doc.pop("_id", None)
-        return ReviewDB(**mongo_doc) #unpack the dictionary into keyword arguments
+    def get_reviews(self, user_id: str,
+                                      filters: dict,
+                                      page: int = 1,
+                                      per_page: int = 10,
+                                      sort_by: str = "title",
+                                      sort_order: int = 1) -> List[ReviewDB]: 
+        try:
+            query = {"user_id": user_id}
+            
+            if filters:
+                query.update(filters) 
+            
+            skip = (page - 1) * per_page
+             
+            cursor = self.collection.find(query).sort(sort_by, sort_order).skip(skip).limit(per_page)
+            results = [self.map_to_model(doc) for doc in cursor]
 
+            return results
+        except Exception as e:
+            print(f"Error getting reviews in filtered and sorted for user {user_id}: {e}")
+            raise
 
+    
+    def count_reviews_by_user(self, user_id: str, filters: dict) -> int:
+        try:
+            query = {"user_id": user_id}
+            if filters:
+                query.update(filters) 
+
+            count = self.collection.count_documents(query)
+            
+            return count
+        
+        except Exception as e:
+            print(f"Error counting reviews  {user_id}: {e}")
+            raise
 
 
 
