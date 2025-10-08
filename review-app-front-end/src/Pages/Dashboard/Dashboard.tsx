@@ -12,6 +12,9 @@ function Dashboard() {
                 <Link to="/search/comic">
                     <button style={{ margin: '10px', padding: '10px 20px' }}>Search Comic</button>
                 </Link>
+                <Link to="/user/library">
+                    <button style={{ margin: '10px', padding: '10px 20px' }}>Library</button>
+                </Link>
             </div>
         </div>
     );
