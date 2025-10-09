@@ -1,28 +1,46 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 interface UseInfiniteScrollProps {
-    callback: () => void;
-    isLoading: boolean;
-    hasNextPage: boolean;
+  callback: () => void; //called when you need more data
+  isLoading: boolean;
+  hasNextPage: boolean;
+  container?: HTMLElement | null;
 }
 
-export function UseInfiniteScroll({ callback, isLoading, hasNextPage} : UseInfiniteScrollProps) {
-    useEffect(() => {
-      if (isLoading || !hasNextPage) return;
-      const handleScroll = () => {
-        if (
-            window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
-            !isLoading &&
-            hasNextPage
-            
-        ) {
-            callback();
-        }
-      };
-      
-      window.addEventListener("scroll", handleScroll);
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
+export function UseInfiniteScroll({
+  callback,
+  isLoading,
+  hasNextPage,
+  container,
+}: UseInfiniteScrollProps) {
+  useEffect(() => {
+    if (isLoading || !hasNextPage) return;
+
+    const target = container || window;
+    const handleScroll = () => {
+      const scrollPosition = container
+        ? container.scrollTop + container.clientHeight
+        : window.innerHeight + window.scrollY;
+      const bottomPosition = container
+        ? container.scrollHeight
+        : document.body.offsetHeight;
+
+      console.log(
+        'Scroll position:',
+        scrollPosition,
+        'Bottom position:',
+        bottomPosition
+      );
+
+      if (scrollPosition >= bottomPosition - 200 && !isLoading && hasNextPage) {
+        console.log('Callback triggered');
+        callback();
       }
-    }, [callback, isLoading, hasNextPage])    
+    };
+
+    target.addEventListener('scroll', handleScroll);
+    return () => {
+      target.removeEventListener('scroll', handleScroll);
+    };
+  }, [callback, isLoading, hasNextPage, container]);
 }
