@@ -8,10 +8,10 @@ from app.routes.review_router import review_router
 
 app = FastAPI()
 
-origins = {
+origins = [
     "http://localhost:5173",
-    "http://127.0.0.1:8000",
-}
+    "http://127.0.0.1",
+]
 
 app.add_middleware(
     CORSMiddleware,

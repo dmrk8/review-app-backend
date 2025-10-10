@@ -127,6 +127,11 @@ class ReviewsCRUD:
             query = {"user_id": user_id}
             
             if filters:
+                for key, value in filters.items():
+                    if key == "title":
+                        query[key] = {"$regex": value, "$options": "i"}
+                    else:
+                        query[key] = value
                 query.update(filters) 
             
             skip = (page - 1) * per_page
