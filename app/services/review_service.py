@@ -8,6 +8,9 @@ class ReviewService:
         self.repository = ReviewsCRUD(media_type)
 
     def create_review(self, review_request : ReviewCreate, user_data: UserData):
+        if not user_data.id:
+            raise ValueError("User ID cannot be None.")
+    
         existing_review = self.repository.get_review_by_user_and_media(
             user_id=user_data.id, media_id=review_request.media_id
         )
@@ -40,21 +43,19 @@ class ReviewService:
             print("Error creating review in ReviewService:", e)
             raise
     
-    def get_reviews_of_user(self, user: UserData):
-        return self.repository.get_reviews_by_user_id(user.id)
-    
     def update_review(self, update_request : ReviewUpdate, user: UserData):
-        user_review_data = self.repository.get_by_id(update_request.review_id)
+        user_review_data = self.repository.get_by_id(update_request.id)
         
         if not user_review_data:
             raise ValueError(f"Review with id {update_request.id} not found")
 
         if user_review_data.user_id != user.id:
             raise ValueError(f"not authorized")
+        
          
         user_review_data.updated_at = datetime.now()
-        user_review_data.review = update_request.review
-        user_review_data.rating = update_request.rating
+        user_review_data.review = update_request.review or ""
+        user_review_data.rating = update_request.rating or 0.0
 
         result = self.repository.update_review(user_review_data)
               
@@ -73,6 +74,9 @@ class ReviewService:
         return {"msg:": "review deleted succesfully"} 
         
     def get_reviews_by_userid(self, user: UserData):
+        if not user.id:
+            raise ValueError("User ID cannot be None.")
+        
         review_list = self.repository.get_reviews_by_userid(user.id)
 
         return review_list

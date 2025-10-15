@@ -16,18 +16,19 @@ class LibraryService:
                                 sort_by: str,
                                 sort_order: int,
                                 ):
-       
+        if not user.id:
+            raise ValueError("User ID cannot be None.") 
         #get filtered reviews
         user_reviews = self.user_repo.get_reviews(user.id, filters, page, per_page, sort_by, sort_order)
 
-        media_ids = [r.media_id for r in user_reviews]
+        media_ids = [int(r.media_id) for r in user_reviews]
 
         media_list = await self.anilist_service.get_user_media_list(media_ids)
 
         media_map = {item.media_id: item for item in media_list}
     
         library_reviews = [
-            auto_mapper.map_to_library_review(r, media_map.get(r.media_id))
+            auto_mapper.map_to_library_review(r, media_map.get(int(r.media_id)))
             for r in user_reviews
         ]
         

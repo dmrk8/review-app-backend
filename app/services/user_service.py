@@ -26,13 +26,3 @@ class UserService:
         except Exception as e:
             print(f"Error creating user: {e}")
             raise
-    
-    def get_user_by_username(self, username: str) -> UserData:
-
-        return self.user_repository.get_by_username(username)
-    
-    def get_user_by_id(self, id: str) -> UserData:
-        return self.user_repository.get_by_id(id)
-    
-    def get_all_users(self) -> List[UserData]:
-        return self.user_repository.get_all() 
