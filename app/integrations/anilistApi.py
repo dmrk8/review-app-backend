@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List, Tuple
 import httpx
 
 from app.models.anilist_models import Anilist_Media
@@ -11,7 +11,7 @@ class AnilistApi:
         pass  
     
     #@anilits_cache(ttl=300, model=Anilist_Media, is_list=True)
-    async def get_anime(self, query: str,  page: int = 1, per_Page: int = 10) -> List[Anilist_Media]:
+    async def get_anime(self, query: str,  page: int = 1, per_Page: int = 10) -> Tuple[List[Anilist_Media], Any]:
         graphql_query = {
             "query": """
             query($search: String, $perPage: Int, $page: Int) {
@@ -61,7 +61,7 @@ class AnilistApi:
         return media_list, page_info
 
     #@anilits_cache(ttl=300, model=Anilist_Media, is_list=True)
-    async def get_comic(self, query: str, page: int = 1, per_Page: int = 10) -> List[Anilist_Media]:   
+    async def get_comic(self, query: str, page: int = 1, per_Page: int = 10) -> Tuple[List[Anilist_Media], Any]:   
         graphql_query = {
             "query": """
             query($search: String, $perPage: Int, $page: Int) {
