@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 class ReviewCreate(BaseModel):
-    media_id: int
+    media_id: str
     title: str
     type : str
     review: str
@@ -17,7 +17,7 @@ class ReviewDB(ReviewCreate):
     updated_at : datetime
 
 class ReviewUpdate(BaseModel):
-    review_id : str
+    id : str
     review: Optional[str] = None
     rating: Optional[float] = None
 
