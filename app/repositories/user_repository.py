@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from bson import ObjectId
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -10,35 +10,46 @@ load_dotenv()  # Load .env
 
 class UserRepository:
     def __init__(self):
-        self.client = MongoClient(os.getenv("MONGODB_URI"), server_api=ServerApi("1"))
-        self.db = self.client[os.getenv("DATABASE_NAME")]
-        self.collection = self.db[os.getenv("USER_COLLECTION")]
+        # Validate environment variables
+        mongodb_uri = os.getenv("MONGODB_URI")
+        database_name = os.getenv("DATABASE_NAME")
+        user_collection = os.getenv("USER_COLLECTION")
 
-    
-    def create(self, user : UserData):
+        if not mongodb_uri:
+            raise ValueError("MONGODB_URI environment variable is not set.")
+        if not database_name:
+            raise ValueError("DATABASE_NAME environment variable is not set.")
+        if not user_collection:
+            raise ValueError("USER_COLLECTION environment variable is not set.")
+
+        # Initialize MongoDB client and collection
+        self.client = MongoClient(mongodb_uri, server_api=ServerApi("1"))
+        self.db = self.client[database_name]
+        self.collection = self.db[user_collection]
+
+    def create(self, user: UserData):
         try:
             data = user.model_dump()
             data.pop("id", None)
 
             result = self.collection.insert_one(data)
-            
             return result
 
         except Exception as e:
             print(f"Error creating user: {e}")
             raise
-    
-    def get_by_id(self, id : str) -> UserData:
+
+    def get_by_id(self, id: str) -> Optional[UserData]:
         try:
             user_doc = self.collection.find_one({"_id": ObjectId(id)})
-            
+
             if user_doc:
                 return self.map_to_model(user_doc)
 
             return None
-        
+
         except Exception as e:
-            print(f"Error finding single user by _id {id}: {e}")
+            print(f"Error getting user by id: {e}")
             raise
     
     def get_all(self) -> List[UserData]:
@@ -89,7 +100,7 @@ class UserRepository:
             print(f"Error checking username existence: {e}")
             raise
 
-    def get_by_username(self, username: str) -> UserData:
+    def get_by_username(self, username: str) -> Optional[UserData]:
         try:
             user_doc = self.collection.find_one({"username" : username})
 

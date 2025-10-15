@@ -9,16 +9,30 @@ from dotenv import load_dotenv
 load_dotenv()  # Load .env
 
 class ReviewsCRUD:
-    def __init__(self, media_type : str):
-        self.client = MongoClient(os.getenv("MONGODB_URI"), server_api=ServerApi('1'))
-        self.db = self.client[os.getenv("DATABASE_NAME")]
+    def __init__(self, media_type: str):
+        mongodb_uri = os.getenv("MONGODB_URI")
+        database_name = os.getenv("DATABASE_NAME")
+        anime_collection = os.getenv("ANIME_COLLECTION")
+        manga_collection = os.getenv("MANGA_COLLECTION")
+
+        # Validate environment variables
+        if not mongodb_uri:
+            raise ValueError("MONGODB_URI environment variable is not set.")
+        if not database_name:
+            raise ValueError("DATABASE_NAME environment variable is not set.")
+        if not anime_collection:
+            raise ValueError("ANIME_COLLECTION environment variable is not set.")
+        if not manga_collection:
+            raise ValueError("MANGA_COLLECTION environment variable is not set.")
+
+        self.client = MongoClient(mongodb_uri, server_api=ServerApi('1'))
+        self.db = self.client[database_name]
 
         # Pick collection based on media type
         if media_type.upper() == "ANIME":
-            self.collection = self.db[os.getenv("ANIME_COLLECTION")]
-        elif media_type.upper() == "COMIC" or media_type.upper() == "MANGA":
-            self.collection = self.db[os.getenv("MANGA_COLLECTION")]
-            
+            self.collection = self.db[anime_collection]
+        elif media_type.upper() in {"COMIC", "MANGA"}:
+            self.collection = self.db[manga_collection]
         else:
             raise ValueError("Invalid media_type. Must be 'ANIME' or 'COMIC'.")
 
@@ -93,7 +107,7 @@ class ReviewsCRUD:
             print(f"Error updating review: {e}")
             raise    
 
-    def get_by_id(self, review_id : int) -> Optional[ReviewDB]:
+    def get_by_id(self, review_id : str) -> Optional[ReviewDB]:
         try:
             data = self.collection.find_one({"_id": ObjectId(review_id)})
             
